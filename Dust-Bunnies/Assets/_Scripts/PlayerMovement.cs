@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 public class PlayerMovement : MonoBehaviour
@@ -7,6 +8,7 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] private Camera playerCamera;
     [SerializeField] private float speed = 10f;
     [SerializeField] private float rotationSpeed = 2f;
+    [SerializeField] private float lookSmoothing = 5f;
     [SerializeField] private float camTransitionSpeed = 3f;
     
     [Header("Locked Overhead Settings")]
@@ -23,10 +25,14 @@ public class PlayerMovement : MonoBehaviour
         LockedLookAroundLeft,
         LockedLookAroundRight
     }
+
     
     private CamState currentCamState = CamState.Free;
     private Vector3 originalCamLocalPos;
     private float originalFOV;
+    private float currRotationSpeedZ = 0f;
+    private float currRotationSpeedX = 0f;
+    private float mouseYIntegrator = 0f;
 
 
     void Start() {
@@ -46,19 +52,21 @@ public class PlayerMovement : MonoBehaviour
         move.Normalize();
         characterController.SimpleMove(move * speed);
 
-        transform.Rotate(Vector3.up * Input.GetAxis("Mouse X") * rotationSpeed);
-        if (Input.GetKeyDown(KeyCode.LeftArrow)) {
-            SetCamStateLookAroundLeft();
-        }
-        else if (Input.GetKeyDown(KeyCode.RightArrow)) {
-            SetCamStateLookAroundRight();
-        } else if (Input.GetKeyDown(KeyCode.DownArrow)) {
-            SetCamStateLockedOverhead();
-        } else if (Input.GetKeyDown(KeyCode.UpArrow)) {
-            SetCamStateReturnFree();
+        currRotationSpeedZ = Mathf.Lerp(currRotationSpeedZ, Input.GetAxis("Mouse X") * rotationSpeed, Time.deltaTime * lookSmoothing);
+        transform.Rotate(Vector3.up * currRotationSpeedZ);
+
+        // Handles returning from locked cam states
+        if (currentCamState == CamState.LockedOverhead)
+        {
+            mouseYIntegrator += Time.deltaTime * Input.GetAxis("Mouse Y");
+            if (mouseYIntegrator > 0.1f || Math.Abs(Mathf.DeltaAngle(this.transform.localEulerAngles.y, 90f)) > 20f)
+            {
+                SetCamStateReturnFree();
+            }
         }
     }
 
+    // LateUpdate is used to ensure camera updates happen after all movement/rotation in Update
     void LateUpdate() {
         switch (currentCamState) {
             case CamState.Free:
@@ -76,10 +84,27 @@ public class PlayerMovement : MonoBehaviour
                 break;
         }
     }
+
+    // Called by DeskOverlookZone while player is in the zone and on exit
+    public void CollideWithDeskOverlookZone(DeskOverlookZone zone, bool exiting) {
+        if (exiting) {
+            if (currentCamState == CamState.LockedOverhead) {
+                SetCamStateReturnFree();
+            }
+            return;
+        }
+        float angleToZone = transform.localEulerAngles.y;
+        if (AngleInRange(angleToZone, zone.triggerDirectionMinAngle, zone.triggerDirectionMaxAngle)
+            && currentCamState == CamState.Free
+            && camHead.localEulerAngles.x > 35f && camHead.localEulerAngles.x < 90f) {
+            SetCamStateLockedOverhead();
+        }
+    }
     
     private void CamFree() {
         Vector3 e = camHead.localEulerAngles;
-        e.x -= Input.GetAxis("Mouse Y") * rotationSpeed;
+        currRotationSpeedX = Mathf.Lerp(currRotationSpeedX, Input.GetAxis("Mouse Y") * rotationSpeed, Time.deltaTime * lookSmoothing);
+        e.x -= currRotationSpeedX;
         e.x = RestrictAngle(e.x, -85f, 85f);
         camHead.localEulerAngles = e;
         
@@ -124,8 +149,11 @@ public class PlayerMovement : MonoBehaviour
             playerCamera.fieldOfView = Mathf.Lerp(playerCamera.fieldOfView, originalFOV, Time.deltaTime * camTransitionSpeed);
         
         // Check if close enough to original position and angle to switch to Free state
-        if (Vector3.Distance(camHead.localPosition, originalCamLocalPos) < 0.01f &&
-            Mathf.Abs(Mathf.DeltaAngle(camHead.localEulerAngles.x, 0f)) < 0.5f) {
+        print(Vector3.Distance(camHead.localPosition, originalCamLocalPos));
+        print(Mathf.Abs(Mathf.DeltaAngle(camHead.localEulerAngles.x, 0f)));
+        if (Vector3.Distance(camHead.localPosition, originalCamLocalPos) < 0.1f
+            && Mathf.Abs(Mathf.DeltaAngle(camHead.localEulerAngles.x, 0f)) < 5f
+            && Mathf.Abs(Mathf.DeltaAngle(camHead.localEulerAngles.z, 0f)) < 0.1f) {
             currentCamState = CamState.Free;
         }
     }
@@ -148,7 +176,7 @@ public class PlayerMovement : MonoBehaviour
     
 
     public void SetCamStateFree() => currentCamState = CamState.Free;
-    public void SetCamStateLockedOverhead() => currentCamState = CamState.LockedOverhead;
+    public void SetCamStateLockedOverhead() { currentCamState = CamState.LockedOverhead; mouseYIntegrator = 0f; }
     public void SetCamStateReturnFree() => currentCamState = CamState.ReturnFree;
     public void SetCamStateLookAroundLeft() => currentCamState = CamState.LockedLookAroundLeft;
     public void SetCamStateLookAroundRight() => currentCamState = CamState.LockedLookAroundRight;
@@ -168,5 +196,17 @@ public class PlayerMovement : MonoBehaviour
             angle = min;
 
         return angle;
+    }
+
+    private bool AngleInRange(float angle, float min, float max)
+    {
+        float normalizedAngle = (angle + 360) % 360;
+        float normalizedMin = (min + 360) % 360;
+        float normalizedMax = (max + 360) % 360;
+
+        if (normalizedMin < normalizedMax)
+            return normalizedAngle >= normalizedMin && normalizedAngle <= normalizedMax;
+        else
+            return normalizedAngle >= normalizedMin || normalizedAngle <= normalizedMax;
     }
 }
