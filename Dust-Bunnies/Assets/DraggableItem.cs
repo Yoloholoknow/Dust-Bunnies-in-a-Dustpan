@@ -96,7 +96,7 @@ public class DraggableItem : MonoBehaviour, IBeginDragHandler, IDragHandler, IEn
 
     // --- HELPERS ---
 
-    // Checks if 'item' is completely contained within 'container' (World Space)
+    // Checks if item is completely contained within container
     private bool IsRectFullyInside(RectTransform item, RectTransform container)
     {
         Vector3[] itemCorners = new Vector3[4];
