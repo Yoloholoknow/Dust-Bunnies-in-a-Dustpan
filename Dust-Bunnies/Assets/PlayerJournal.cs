@@ -56,10 +56,7 @@ public class PlayerJournal : MonoBehaviour
         Cursor.lockState = isOpen ? CursorLockMode.None : CursorLockMode.Locked;
         Cursor.visible = isOpen;
 
-        if (playerMovementScript != null)
-        {
-            playerMovementScript.enabled = !isOpen;
-        }
+        playerMovementScript.enabled = !isOpen;
     }
 
     // --- Photo ---

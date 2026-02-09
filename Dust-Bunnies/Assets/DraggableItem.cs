@@ -28,7 +28,7 @@ public class DraggableItem : MonoBehaviour, IBeginDragHandler, IDragHandler, IEn
         originalAnchoredPosition = rectTransform.anchoredPosition;
         originalSiblingIndex = transform.GetSiblingIndex();
 
-        // 2. move to top of hierarchy for visibility
+        // move to top of hierarchy for visibility
         canvasGroup.alpha = 0.6f;
         canvasGroup.blocksRaycasts = false;
         transform.SetParent(canvas.transform);
@@ -57,10 +57,6 @@ public class DraggableItem : MonoBehaviour, IBeginDragHandler, IDragHandler, IEn
                 if (journal != null)
                 {
                     journal.RequestDelete(gameObject, this);
-                }
-                else
-                {
-                    Destroy(gameObject);
                 }
                 return;
             }
@@ -98,7 +94,7 @@ public class DraggableItem : MonoBehaviour, IBeginDragHandler, IDragHandler, IEn
         transform.SetSiblingIndex(originalSiblingIndex);
     }
 
-    // --- MATH HELPERS ---
+    // --- HELPERS ---
 
     // Checks if 'item' is completely contained within 'container' (World Space)
     private bool IsRectFullyInside(RectTransform item, RectTransform container)
