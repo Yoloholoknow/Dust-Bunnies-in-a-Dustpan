@@ -30,9 +30,24 @@ public class PlayerJournal : MonoBehaviour
     public RectTransform captureZone;
     public Image flashEffect;
 
+    [Header("Input Settings")]
+    public float holdDuration = 0.5f;
+    private float holdTimer = 0f;
+    private bool hasTriggered = false;
+
+    [Header("UI Feedback")]
+    public Image holdIndicator;
+
     [Header("Camera Settings")]
     public float photoCooldown = 1.0f;
     private float lastPhotoTime = 0f;
+
+    [Header("Camera Lens Settings")]
+    public float defaultFOV = 60f;
+    public float zoomedFOV = 45f;
+    public float zoomSpeed = 10f;
+    
+    private Camera mainCam;
 
     [Header("Flash Settings")]
     [Range(0f, 1f)] public float maxFlashIntensity = 0.85f;
@@ -69,6 +84,11 @@ public class PlayerJournal : MonoBehaviour
         cameraOverlay.SetActive(isCameraMode);  // camera mode starts off
         photoInboxPanel.SetActive(isPhotoInboxOpen); // inbox starts closed
         
+        // initialize cursor and player movement for gameplay
+        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false;
+        if (playerMovementScript != null) playerMovementScript.enabled = true;
+        
         // flash effect should start invisible
         if (flashEffect != null)
         {
@@ -82,6 +102,11 @@ public class PlayerJournal : MonoBehaviour
         {
             cameraWorldLight.enabled = false;
         }
+        
+        // set up main camera reference and default FOV
+        mainCam = Camera.main;
+        if (mainCam != null) 
+            defaultFOV = mainCam.fieldOfView;
 
         // set up toggle inbox button
         if (togglePhotosButton != null)
@@ -97,6 +122,17 @@ public class PlayerJournal : MonoBehaviour
 
         // set initial page visibility and button states
         UpdatePageVisibility();
+        
+        // initialize hold indicator (starts hidden)
+        if (holdIndicator != null)
+        {
+            holdIndicator.fillAmount = 0f;
+            holdIndicator.gameObject.SetActive(false);
+        }
+        else
+        {
+            Debug.LogWarning("PlayerJournal: holdIndicator is not assigned!");
+        }
     }
 
     void Update()
@@ -105,21 +141,64 @@ public class PlayerJournal : MonoBehaviour
         if (Input.GetKeyDown(journalKey) && !isJournalOpen && !isCameraMode) ToggleJournal();
 
         // Enter Camera Mode if P is pressed, or take photo if already in camera mode
-        if (Input.GetKeyDown(cameraKey) && !isJournalOpen)
+        if (isCameraMode)
         {
-            if (isCameraMode)
+            // In camera mode: single press takes a photo
+            if (Input.GetKeyDown(cameraKey) && !isJournalOpen)
             {
-                // take picture if already in camera mode
                 if (Time.time - lastPhotoTime >= photoCooldown)
                 {
                     StartCoroutine(CapturePhoto());
                     lastPhotoTime = Time.time;
                 }
             }
-            else
+        }
+        else
+        {
+            // Not in camera mode: hold to enter camera mode
+            if (Input.GetKey(cameraKey) && !isJournalOpen && !hasTriggered)
             {
-                // enter camera mode
-                ToggleCameraMode();
+                holdTimer += Time.deltaTime;
+                
+                // Update UI (Ring)
+                if (holdIndicator != null)
+                {
+                    holdIndicator.gameObject.SetActive(true);
+                    holdIndicator.fillAmount = holdTimer / holdDuration;
+                    Debug.Log($"Hold progress: {holdIndicator.fillAmount}");
+                }
+
+                // Check if held long enough
+                if (holdTimer >= holdDuration)
+                {
+                    ToggleCameraMode();
+                    hasTriggered = true;
+                    if (holdIndicator != null) holdIndicator.gameObject.SetActive(false);
+                }
+            }
+            
+            // Reset when key is released
+            if (Input.GetKeyUp(cameraKey))
+            {
+                holdTimer = 0f;
+                hasTriggered = false;
+                
+                if (holdIndicator != null)
+                {
+                    holdIndicator.fillAmount = 0f;
+                    holdIndicator.gameObject.SetActive(false);
+                }
+            }
+        }
+
+        if (mainCam != null)
+        {
+            float target = isCameraMode ? zoomedFOV : defaultFOV;
+            
+            // If we are not at the target, slide towards it
+            if (Mathf.Abs(mainCam.fieldOfView - target) > 0.1f)
+            {
+                mainCam.fieldOfView = Mathf.Lerp(mainCam.fieldOfView, target, Time.deltaTime * zoomSpeed);
             }
         }
 
@@ -136,7 +215,14 @@ public class PlayerJournal : MonoBehaviour
         journalPanel.SetActive(isJournalOpen);
         
         // handle cursor visibility and lock state
-        Cursor.lockState = isJournalOpen ? CursorLockMode.None : CursorLockMode.Locked;
+        if (isJournalOpen)
+        {
+            Cursor.lockState = CursorLockMode.None;
+        }
+        else
+        {
+            StartCoroutine(LockCursorNextFrame());
+        }
         Cursor.visible = isJournalOpen;
         
         // disable player movement when journal is open
@@ -148,9 +234,18 @@ public class PlayerJournal : MonoBehaviour
         isCameraMode = !isCameraMode;
         cameraOverlay.SetActive(isCameraMode);
         
-        // FEATURE: disable player movement but allow looking around when in camera mode
+        StartCoroutine(LockCursorNextFrame());
+        
+        // TO DO: disable player movement but allow looking around when in camera mode
         // disabling player movement currently disables the entire character controller, including looking around.
     }
+
+    IEnumerator LockCursorNextFrame()
+{
+    yield return null;
+    Cursor.lockState = CursorLockMode.Locked;
+    Cursor.visible = false;
+}
 
     // --- Photo ---
     IEnumerator CapturePhoto()
@@ -306,8 +401,15 @@ public class PlayerJournal : MonoBehaviour
     // --- Sticky Note ---
     public void CreateStickyNote()
     {
-        GameObject newNote = Instantiate(stickyNotePrefab, journalPanel.transform);
-        newNote.transform.position = new Vector3(Screen.width / 2, Screen.height / 2, 0);
+        GameObject newNote = Instantiate(stickyNotePrefab, journalRect.transform);
+        RectTransform rect = newNote.GetComponent<RectTransform>();
+        
+        if (rect != null)
+        {
+            rect.anchoredPosition = Vector2.zero; 
+            rect.localScale = Vector3.one;
+            rect.localRotation = Quaternion.identity;
+        }
     }
 
     public void NextPage()
