@@ -4,11 +4,11 @@ using UnityEngine.UI;
 public class ItemDeleteHandler : MonoBehaviour
 {
     [Header("UI Components")]
-    public GameObject deleteButton;
-    public GameObject confirmOverlay;
-    public Button trashIconBtn;
-    public Button yesBtn;
-    public Button noBtn;
+    [SerializeField] private GameObject deleteButton;
+    [SerializeField] private GameObject confirmOverlay;
+    [SerializeField] private Button trashIconBtn;
+    [SerializeField] private Button yesBtn;
+    [SerializeField] private Button noBtn;
 
     void Start()
     {

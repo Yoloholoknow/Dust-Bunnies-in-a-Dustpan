@@ -6,8 +6,8 @@ using System.Collections;
 public class JournalItemFocus : MonoBehaviour, IPointerClickHandler
 {
     [Header("Settings")]
-    public float focusScale = 2.0f;
-    public float animationSpeed = 10f;
+    [SerializeField] private float focusScale = 2.0f;
+    [SerializeField] private float animationSpeed = 10f;
 
     // State Tracking
     private Transform originalParent;

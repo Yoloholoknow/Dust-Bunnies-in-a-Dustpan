@@ -5,8 +5,8 @@ using System.Collections;
 public class PageFlipper : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
 {
     [Header("Settings")]
-    public bool isNextButton = true;
-    public float flipInterval = 0.75f;
+    [SerializeField] private bool isNextButton = true;
+    [SerializeField] private float flipInterval = 0.75f;
 
     private PlayerJournal journal;
     private Coroutine flipCoroutine;

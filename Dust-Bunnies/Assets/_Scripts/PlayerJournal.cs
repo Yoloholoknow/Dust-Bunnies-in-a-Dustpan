@@ -8,68 +8,67 @@ using TMPro;
 public class PlayerJournal : MonoBehaviour
 {
     [Header("Player Settings")]
-    public MonoBehaviour playerMovementScript;
+    [SerializeField] private MonoBehaviour playerMovementScript;
 
     [Header("Settings")]
-    public KeyCode journalKey = KeyCode.J;
+    private KeyCode journalKey = KeyCode.J;
     
-    public KeyCode cameraKey = KeyCode.P;
-    public KeyCode escapeKey = KeyCode.Escape;
+    private KeyCode cameraKey = KeyCode.P;
+    private KeyCode escapeKey = KeyCode.Escape;
 
     [Header("Journal UI")]
-    public GameObject journalPanel;
-    public GameObject polaroidPrefab;
-    public GameObject stickyNotePrefab;
-    public GameObject photoInboxPanel;
-    public GameObject photosShaderPanel;
-    public Transform inboxContent;
-    public Button togglePhotosButton;
-    public Button newNoteButton;
+    [SerializeField] private GameObject journalPanel;
+    [SerializeField] private GameObject polaroidPrefab;
+    [SerializeField] private GameObject stickyNotePrefab;
+    [SerializeField] private GameObject photoInboxPanel;
+    [SerializeField] private GameObject photosShaderPanel;
+    [SerializeField] private Transform inboxContent;
+    [SerializeField] private Button togglePhotosButton;
+    [SerializeField] private Button newNoteButton;
 
     [Header("Camera UI")]
-    public GameObject cameraOverlay;
-    public RectTransform captureZone;
-    public Image flashEffect;
+    [SerializeField] private GameObject cameraOverlay;
+    [SerializeField] private RectTransform captureZone;
+    [SerializeField] private Image flashEffect;
 
     [Header("Input Settings")]
-    public float holdDuration = 0.5f;
+    [SerializeField] private float holdDuration = 0.5f;
     private float holdTimer = 0f;
     private bool hasTriggered = false;
 
     [Header("UI Feedback")]
-    public Image holdIndicator;
+    [SerializeField] private Image holdIndicator;
 
     [Header("Camera Settings")]
-    public float photoCooldown = 1.0f;
-    private float lastPhotoTime = 0f;
+    [SerializeField] private float photoCooldown = 1.0f;
+    [SerializeField] private float lastPhotoTime = 0f;
 
     [Header("Camera Lens Settings")]
-    public float defaultFOV = 60f;
-    public float zoomedFOV = 45f;
-    public float zoomSpeed = 10f;
+    [SerializeField] private float defaultFOV = 60f;
+    [SerializeField] private float zoomedFOV = 45f;
+    [SerializeField] private float zoomSpeed = 10f;
     
     private Camera mainCam;
 
     [Header("Flash Settings")]
-    [Range(0f, 1f)] public float maxFlashIntensity = 0.85f;
-    public float flashDuration = 0.5f;
-    public AnimationCurve flashCurve = AnimationCurve.EaseInOut(0, 1, 1, 0);
-    public Light cameraWorldLight;
+    [Range(0f, 1f)] [SerializeField] private float maxFlashIntensity = 0.85f;
+    [SerializeField] private float flashDuration = 0.5f;
+    [SerializeField] private Light cameraWorldLight;
 
     [Header("Book Navigation")]
-    public GameObject[] pageSpreads;
-    public Button nextButton;
-    public Button prevButton;
+    [SerializeField] private GameObject[] pageSpreads;
+    [SerializeField] private Button nextButton;
+    [SerializeField] private Button prevButton;
 
     [Header("Notification UI")]
-    public GameObject notificationBadge;
-    public TextMeshProUGUI notificationText;
+    [SerializeField] private GameObject notificationBadge;
+    [SerializeField] private TextMeshProUGUI notificationText;
 
     [Header("UI Animation")]
-    public RectTransform journalRect;
-    public float centeredX = 0f;
-    public float shiftedX = 125f;
-    public float animationSpeed = 8f;
+    [SerializeField] private RectTransform journalRect;
+    [SerializeField] private float centeredX = 0f;
+    [SerializeField] private float shiftedX = 125f;
+    [SerializeField] private float animationSpeed = 8f;
     private Coroutine slideCoroutine;
     
     // variables to track state
