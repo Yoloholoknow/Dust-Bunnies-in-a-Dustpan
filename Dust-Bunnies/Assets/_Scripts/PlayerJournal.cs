@@ -214,7 +214,7 @@ public class PlayerJournal : MonoBehaviour
     {
         isJournalOpen = !isJournalOpen;
         journalPanel.SetActive(isJournalOpen);
-        
+
         // handle cursor visibility and lock state
         if (isJournalOpen)
         {
@@ -244,7 +244,10 @@ public class PlayerJournal : MonoBehaviour
     {
         isCameraMode = !isCameraMode;
         cameraOverlay.SetActive(isCameraMode);
-        
+
+        hasTriggered = false;
+        holdTimer = 0f;
+
         StartCoroutine(LockCursorNextFrame());
         
         // TO DO: disable player movement but allow looking around when in camera mode
